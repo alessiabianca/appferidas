@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Cálculo de Área de Feridas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            color: #000080;
+        }
+        h2 {
+            color: #000080;
+        }
+        .button-container {
+            margin: 20px;
+        }
+        button {
+            background-color: yellow;
+            color: #000080;
+            font-weight: bold;
+            font-size: 16px;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+        }
+        #result-container {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        #result-container img {
+            max-width: 100%;
+            height: auto;
+            margin-right: 20px;
+        }
+        #area-text {
+            color: #000080;
+            font-weight: bold;
+        }
+        #processing-message {
+            color: #000080;
+        }
+    </style>
+</head>
+<body>
+    <h1>Bem-vindo ao sistema de cálculo de área de feridas!</h1>
+    <h2>Vamos começar!</h2>
+    <div class="button-container">
+        <button type="button" id="file-button">Anexar imagem</button>
+    </div>
+    <form id="upload-form" enctype="multipart/form-data" style="display: none;">
+        <input type="file" id="file-input" name="file" accept="image/*" required>
+    </form>
+    <p id="processing-message" style="display: none;">Processando, por favor aguarde...</p>
+    <div id="result-container">
+        <img id="result-image" src="" alt="Result Image">
+        <p id="area-text"></p>
+    </div>
+
+    <script>
+        document.getElementById('file-button').addEventListener('click', () => {
+            document.getElementById('file-input').click();
+        });
+
+        document.getElementById('file-input').addEventListener('change', () => {
+            const form = document.getElementById('upload-form');
+            const processingMessage = document.getElementById('processing-message');
+            const resultImage = document.getElementById('result-image');
+            const areaText = document.getElementById('area-text');
+
+            form.style.display = 'none';
+            processingMessage.style.display = 'block';
+
+            const formData = new FormData();
+            formData.append('file', document.getElementById('file-input').files[0]);
+
+            fetch('http://localhost:8001/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Upload falhou');
+                const areaPixels = response.headers.get("Area-Pixels");
+                const areaCm2 = response.headers.get("Area-Cm2");
+                return response.blob().then(blob => ({ blob, areaPixels, areaCm2 }));
+            })
+            .then(({ blob, areaPixels, areaCm2 }) => {
+                const url = URL.createObjectURL(blob);
+                resultImage.src = url;
+                processingMessage.style.display = 'none';
+                areaText.innerHTML = `Área da ferida: ${areaPixels} pixels<br>Área da ferida: ${areaCm2} cm²`;
+            })
+            .catch(error => {
+                alert(error.message);
+                processingMessage.style.display = 'none';
+            });
+        });
+    </script>
+</body>
+</html>
